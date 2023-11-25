@@ -35,18 +35,18 @@ class MainActivity : ComponentActivity() {
 
         //tv = 1022811 (단위 W), 전자레인지 = 10338815 (단위 W), 냉장고 = 10251508 (단위 kWh(월)), 에어컨 = 1022644(단위 : kW)
 
-        //보일러 = 10330122(소비전력이라는 단어가 없어서 따로 해야할 듯)
+        //보일러 = 10346666(소비전력이라는 단어가 없어서 따로 해야할 듯)
         //세탁기 = 10244107(드럼세탁기 코드, 통돌이는 10244730, 세탁기는 소비전력이 없고 등급만 적혀있어서 시뮬레이션 불가)
 
-        val productCode = "10330122"
+        val productCode = "1022811"
         val document = Jsoup.connect(searchSite + productCode).get()
 
         val onlyProduct = document.select("li.prod_item.prod_layer")
         val onlyProductString = onlyProduct.joinToString(" ") { it.text() }
 
         val productsName = onlyProduct.select("a[name='productName']").map { it.text() }
-        val productPowers = if (productCode == "10330122") {
-            emptyList<Double>()
+        val productPowers = if (productCode == "10346666") {
+            extractBoilerPowers(onlyProductString)
         }
         else {
             extractPowers(onlyProductString)
@@ -100,6 +100,32 @@ class MainActivity : ComponentActivity() {
 
         return prices
     }
+
+    fun extractBoilerPowers(text: String): List<Int> {
+        val powers = mutableListOf<Int>()
+        // 숫자+W 형태의 정규 표현식
+        val regex = "(\\d+)W".toRegex()
+
+        val splitText = text.split("온도조절기")
+
+        // 모든 요소를 순회
+        for (part in splitText) {
+            // 각 부분에서 '숫자+W' 패턴을 찾아 모든 매치를 가져옴
+            val matchResults = regex.findAll(part).toList()
+
+            // 마지막 매치에서 숫자 부분을 추출
+            if (matchResults.isNotEmpty()) {
+                val lastMatch = matchResults.last().groupValues[1].toInt()
+                powers.add(lastMatch)
+            }
+        }
+
+        return powers
+    }
+
+
+
+
 
     data class ProductInfo(
         val name: String,
